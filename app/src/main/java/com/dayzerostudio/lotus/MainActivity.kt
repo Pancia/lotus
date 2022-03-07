@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
 }
 
 class LotusViewModel(private val context: Context) : ViewModel() {
-    val loopSeconds = mutableStateOf(60)
+    val loopSeconds = mutableStateOf(120)
     var secondsLeft: MutableState<Int?> = mutableStateOf(null)
     var timer: CountDownTimer? = null
     val lapCount = mutableStateOf(0)
@@ -76,17 +76,12 @@ class LotusViewModel(private val context: Context) : ViewModel() {
     }
 
     fun start() {
-        Log.d("DBG", "start")
         if (timer == null) {
-            Log.d("DBG", "loopSeconds = ${loopSeconds.value}")
             secondsLeft.value = loopSeconds.value
-            Log.d("DBG", "secondsLeft = ${secondsLeft.value}")
             timer = object : CountDownTimer(loopSeconds.value * 1000L, 1000) {
                 override fun onTick(millisLeft: Long) {
                     secondsLeft.value = floor(millisLeft / 1000f).toInt()
-                    Log.d("DBG", "onTick = ${secondsLeft.value}")
                 }
-
                 override fun onFinish() {
                     playSound()
                     lapCount.value += 1
@@ -104,6 +99,8 @@ class LotusViewModel(private val context: Context) : ViewModel() {
     }
 }
 
+fun secondsToDigitalTime(seconds: Int) =
+    "${seconds / 60}:%02d".format(seconds % 60)
 
 @Composable
 fun LotusTimer(vm: LotusViewModel) {
@@ -114,7 +111,7 @@ fun LotusTimer(vm: LotusViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "${vm.secondsLeft.value ?: vm.loopSeconds.value}",
+            secondsToDigitalTime(vm.secondsLeft.value ?: vm.loopSeconds.value),
             style = typography.h3
         )
         if (vm.lapCount.value >= 1) {
