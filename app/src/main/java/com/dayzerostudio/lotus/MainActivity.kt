@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.speech.tts.TextToSpeech
+import android.text.style.BackgroundColorSpan
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -14,6 +15,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.FloatRange
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -30,9 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.dayzerostudio.lotus.ui.theme.LotusTheme
+import java.time.temporal.ValueRange
 import kotlin.math.floor
 
 class MainActivity : ComponentActivity() {
@@ -64,6 +68,8 @@ class LotusViewModel(private val context: Context) : ViewModel() {
     var secondsLeft: MutableState<Int?> = mutableStateOf(null)
     var timer: CountDownTimer? = null
     val lapCount = mutableStateOf(0)
+    val showDialog = mutableStateOf(false)
+    val volume = mutableStateOf(0.5f)
 
     fun addMinute() {
         if (timer == null)
@@ -122,7 +128,7 @@ class LotusViewModel(private val context: Context) : ViewModel() {
             try {
                 setDataSource(context, uri)
                 prepare()
-                setVolume(0.5f, 0.5f)
+                setVolume(volume.value, volume.value)
                 isLooping = true
                 start()
             } catch (e: Exception) {
@@ -150,6 +156,21 @@ class LotusViewModel(private val context: Context) : ViewModel() {
         Toast.makeText(context, "PICK NOISE", Toast.LENGTH_SHORT).show()
         requestNoise.launch(arrayOf("audio/*"))
     }
+
+    fun openVolumeSlider() {
+        showDialog.value = true
+    }
+
+    fun dismissVolumeSlider() {
+        showDialog.value = false
+    }
+
+    fun setVolume(v: Float) {
+        volume.value = v
+        if (player?.isPlaying == true) {
+            player?.setVolume(v, v)
+        }
+    }
 }
 
 fun secondsToDigitalTime(seconds: Int) =
@@ -169,6 +190,17 @@ fun LotusTimer(vm: LotusViewModel) {
     ) { path: Uri ->
         noiseURL.value = "$path"
     }
+    if (vm.showDialog.value) {
+        Dialog(onDismissRequest = { vm.dismissVolumeSlider() }) {
+            Text("Volume: ${vm.volume.value}")
+            Slider(
+                value = vm.volume.value,
+                onValueChange = vm::setVolume,
+                steps = 10,
+                valueRange = 0f.rangeTo(1f)
+            )
+        }
+    }
     Column(
         modifier = Modifier.fillMaxSize(1f),
         verticalArrangement = Arrangement.SpaceEvenly,
@@ -183,6 +215,12 @@ fun LotusTimer(vm: LotusViewModel) {
                 Modifier.size(60.dp)
             ) {
                 Text("⏯", style = typography.h5)
+            }
+            Button(
+                onClick = { vm.openVolumeSlider() },
+                Modifier.size(60.dp)
+            ) {
+                Text("🔉", style = typography.h5)
             }
             Button(
                 onClick = { vm.pickNoise(requestNoise) },
