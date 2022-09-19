@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.core.os.bundleOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.dayzerostudio.lotus.ui.theme.LotusTheme
@@ -85,12 +86,13 @@ class LotusViewModel(private val context: Context) : ViewModel() {
     private val tts = TextToSpeech(context) {}
 
     fun playSound() {
-        Log.d("DBG", "playSound")
         MediaPlayer.create(context, R.raw.gong).apply {
             isLooping = false
+            setVolume(volume.value, volume.value)
             this.start()
         }
-        tts.speak("${lapCount.value + 1}", TextToSpeech.QUEUE_ADD, Bundle.EMPTY, "")
+        val params = bundleOf(TextToSpeech.Engine.KEY_PARAM_VOLUME to volume.value)
+        tts.speak("${lapCount.value + 1}", TextToSpeech.QUEUE_ADD, params, "")
     }
 
     fun start() {
