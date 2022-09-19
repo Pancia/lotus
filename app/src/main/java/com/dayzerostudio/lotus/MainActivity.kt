@@ -38,6 +38,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.dayzerostudio.lotus.ui.theme.LotusTheme
 import java.time.temporal.ValueRange
 import kotlin.math.floor
+import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
     @ExperimentalFoundationApi
@@ -137,26 +138,6 @@ class LotusViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-    fun toggleNoise(
-        requestNoise: ManagedActivityResultLauncher<Array<String>, Uri>,
-        noiseURL: String
-    ) {
-        if (noiseURL.isBlank()) {
-            pickNoise(requestNoise)
-        } else {
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            } else {
-                startPlaying(Uri.parse(noiseURL))
-            }
-        }
-    }
-
-    fun pickNoise(requestNoise: ManagedActivityResultLauncher<Array<String>, Uri>) {
-        Toast.makeText(context, "PICK NOISE", Toast.LENGTH_SHORT).show()
-        requestNoise.launch(arrayOf("audio/*"))
-    }
-
     fun openVolumeSlider() {
         showDialog.value = true
     }
@@ -192,11 +173,11 @@ fun LotusTimer(vm: LotusViewModel) {
     }
     if (vm.showDialog.value) {
         Dialog(onDismissRequest = { vm.dismissVolumeSlider() }) {
-            Text("Volume: ${vm.volume.value}")
+            Text("Volume: ${vm.volume.value.toString().take(3)}")
             Slider(
                 value = vm.volume.value,
                 onValueChange = vm::setVolume,
-                steps = 10,
+                steps = 8,
                 valueRange = 0f.rangeTo(1f)
             )
         }
@@ -208,25 +189,13 @@ fun LotusTimer(vm: LotusViewModel) {
     ) {
         Row(
             Modifier.fillMaxWidth(1f),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.Center
         ) {
-            Button(
-                onClick = { vm.toggleNoise(requestNoise, noiseURL.value) },
-                Modifier.size(60.dp)
-            ) {
-                Text("⏯", style = typography.h5)
-            }
             Button(
                 onClick = { vm.openVolumeSlider() },
                 Modifier.size(60.dp)
             ) {
                 Text("🔉", style = typography.h5)
-            }
-            Button(
-                onClick = { vm.pickNoise(requestNoise) },
-                Modifier.size(60.dp)
-            ) {
-                Text("🎵", style = typography.h5)
             }
         }
         Text(
